@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Основные страницы
+Allow: /music
+Allow: /playlist
+Allow: /search
+
+# Sitemap
+Sitemap: https://nexus-music.vercel.app/sitemap.xml
+
+# Запретить индексацию технических файлов
+Disallow: /_next/
+Disallow: /api/
+Disallow: *.json
+Disallow: *.js
+Disallow: *.css

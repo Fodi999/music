@@ -76,7 +76,7 @@ export function MusicBrainzDemo() {
           <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside">
             <li>Найти исполнителя Queen</li>
             <li>Получить альбомы Queen по MBID</li>
-            <li>Найти трек "Bohemian Rhapsody"</li>
+            <li>Найти трек &quot;Bohemian Rhapsody&quot;</li>
           </ol>
           
           <Button

@@ -281,7 +281,7 @@ export function MusicSearch() {
         (activeTab === 'tracks' && recordings.length === 0)
       ) && (
         <div className="text-center py-8 text-gray-400">
-          <p>Ничего не найдено для "{searchQuery}"</p>
+          <p>Ничего не найдено для &quot;{searchQuery}&quot;</p>
           <p className="text-sm mt-2">Попробуйте другой поисковый запрос</p>
         </div>
       )}

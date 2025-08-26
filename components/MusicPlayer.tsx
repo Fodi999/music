@@ -195,7 +195,7 @@ export function MusicPlayer() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, currentTrack, isRepeating]);
+  }, [isPlaying, currentTrack, isRepeating, currentTrackDuration]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
