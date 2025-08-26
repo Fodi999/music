@@ -19,7 +19,6 @@ const nextConfig = {
   
   // Экспериментальные функции для лучшей производительности
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useMusicBrainz, useTrackInfo } from '@/hooks/useMusicBrainz';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface Track {
   id: number;
@@ -176,6 +176,15 @@ export function MusicPlayer() {
 
   const currentTrackDuration = currentTrack ? durationToSeconds(currentTrack.duration) : 0;
 
+  const nextTrack = useCallback(() => {
+    if (isShuffled) {
+      setCurrentTrackIndex(Math.floor(Math.random() * tracks.length));
+    } else {
+      setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+    }
+    setCurrentTime(0);
+  }, [isShuffled]); // убираем tracks.length из зависимостей
+
   // Симуляция прогресса трека
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -195,7 +204,7 @@ export function MusicPlayer() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, currentTrack, isRepeating, currentTrackDuration]);
+  }, [isPlaying, currentTrack, isRepeating, currentTrackDuration, nextTrack]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -205,15 +214,6 @@ export function MusicPlayer() {
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
-  };
-
-  const nextTrack = () => {
-    if (isShuffled) {
-      setCurrentTrackIndex(Math.floor(Math.random() * tracks.length));
-    } else {
-      setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
-    }
-    setCurrentTime(0);
   };
 
   const prevTrack = () => {
