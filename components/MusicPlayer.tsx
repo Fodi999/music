@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useMusicBrainz, useTrackInfo } from '@/hooks/useMusicBrainz';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface Track {
   id: number;
@@ -41,7 +41,7 @@ const tracks: Track[] = [
     album: "Neon Dreams",
     duration: "4:32",
     durationSeconds: 272,
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     genre: "Synthwave",
     year: "2024",
     isLiked: true
@@ -87,7 +87,7 @@ const tracks: Track[] = [
     album: "Synthwave Nights",
     duration: "6:12",
     durationSeconds: 372,
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     genre: "Synthwave",
     year: "2024",
     isLiked: true
@@ -122,7 +122,7 @@ const tracks: Track[] = [
     album: "Nocturnal",
     duration: "5:30",
     durationSeconds: 330,
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     genre: "Synthwave",
     year: "2024"
   },
@@ -159,14 +159,114 @@ export function MusicPlayer() {
   const [volume, setVolume] = useState([75]);
   const [isShuffled, setIsShuffled] = useState(false);
   const [isRepeating, setIsRepeating] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  
+  // Ref для HTML5 Audio элемента
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const currentTrack = playlist[currentTrackIndex];
+  const currentTrack = playlist[currentTrackIndex] || tracks[currentTrackIndex];
   const { trackInfo } = useTrackInfo(currentTrack?.mbid);
+
+  // Надежные демо-аудиофайлы для проверки
+  const demoAudioUrls = [
+    // Используем более надежные источники с поддержкой CORS
+    'https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3',
+    'https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg',
+    'https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.mp3',
+    'https://file-examples.com/storage/fec1bb7c5c1aac02ee8f6b6/2017/11/file_example_MP3_5MG.mp3',
+    'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
+    // Fallback на локальные файлы API
+    '/api/audio/demo1',
+    '/api/audio/demo2', 
+    '/api/audio/demo3',
+    '/api/audio/demo4',
+    '/api/audio/demo5'
+  ];
 
   // Load MusicBrainz data on component mount
   useEffect(() => {
     buildPlaylistFromMusicBrainz(['electronic', 'techno', 'house', 'ambient']);
   }, [buildPlaylistFromMusicBrainz]);
+
+  // Initialize audio element
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio();
+      
+      const audio = audioRef.current;
+      
+      // Audio event listeners
+      const handleTimeUpdate = () => {
+        setCurrentTime(audio.currentTime);
+      };
+      
+      const handleLoadedMetadata = () => {
+        setAudioError(null);
+        // Обновляем длительность из реального аудио
+        if (audio.duration && !isNaN(audio.duration)) {
+          // Можно обновить длительность трека в состоянии, если нужно
+        }
+      };
+      
+      const handleError = () => {
+        setAudioError('Не удалось загрузить аудиофайл');
+        setIsPlaying(false);
+      };
+      
+      const handleEnded = () => {
+        if (isRepeating) {
+          audio.currentTime = 0;
+          audio.play();
+        } else {
+          nextTrack();
+        }
+      };
+
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.addEventListener('error', handleError);
+      audio.addEventListener('ended', handleEnded);
+
+      return () => {
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('error', handleError);
+        audio.removeEventListener('ended', handleEnded);
+        audio.pause();
+      };
+    }
+  }, [isRepeating]);
+
+  // Update audio source when track changes
+  useEffect(() => {
+    if (audioRef.current && currentTrack) {
+      const audio = audioRef.current;
+      
+      // Используем демо URL или попробуем найти реальный
+      const audioUrl = demoAudioUrls[currentTrackIndex % demoAudioUrls.length];
+      
+      audio.src = audioUrl;
+      audio.volume = volume[0] / 100;
+      audio.currentTime = 0; // Сбрасываем время
+      setCurrentTime(0);
+      
+      // Если играла музыка, продолжаем воспроизведение
+      if (isPlaying) {
+        audio.play().catch(error => {
+          console.log('Autoplay prevented:', error);
+          setIsPlaying(false);
+          setAudioError('Для воспроизведения нужно разрешение браузера');
+        });
+      }
+    }
+  }, [currentTrackIndex, currentTrack]);
+
+  // Update volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume[0] / 100;
+    }
+  }, [volume]);
 
   // Convert duration string to seconds for progress calculation
   const durationToSeconds = (duration: string): number => {
@@ -174,37 +274,61 @@ export function MusicPlayer() {
     return minutes * 60 + seconds;
   };
 
-  const currentTrackDuration = currentTrack ? durationToSeconds(currentTrack.duration) : 0;
+  // Получаем реальную длительность из аудио или используем заданную
+  const currentTrackDuration = audioRef.current?.duration && !isNaN(audioRef.current.duration) ? 
+    audioRef.current.duration : 
+    (currentTrack ? durationToSeconds(currentTrack.duration) : 0);
 
   const nextTrack = useCallback(() => {
+    const playlistToUse = playlist.length > 0 ? playlist : tracks;
     if (isShuffled) {
-      setCurrentTrackIndex(Math.floor(Math.random() * tracks.length));
+      setCurrentTrackIndex(Math.floor(Math.random() * playlistToUse.length));
     } else {
-      setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+      setCurrentTrackIndex((prev) => (prev + 1) % playlistToUse.length);
     }
     setCurrentTime(0);
-  }, [isShuffled]); // убираем tracks.length из зависимостей
+  }, [isShuffled, playlist]);
 
-  // Симуляция прогресса трека
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime(prev => {
-          if (prev >= currentTrackDuration) {
-            if (isRepeating) {
-              return 0;
-            } else {
-              nextTrack();
-              return 0;
-            }
-          }
-          return prev + 1;
-        });
-      }, 1000);
+  const prevTrack = () => {
+    const playlistToUse = playlist.length > 0 ? playlist : tracks;
+    setCurrentTrackIndex((prev) => (prev - 1 + playlistToUse.length) % playlistToUse.length);
+    setCurrentTime(0);
+  };
+
+  const selectTrack = (index: number) => {
+    setCurrentTrackIndex(index);
+    setCurrentTime(0);
+  };
+
+  const togglePlay = async () => {
+    if (!audioRef.current) return;
+
+    try {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        await audioRef.current.play();
+        setIsPlaying(true);
+        setAudioError(null);
+      }
+    } catch (error) {
+      console.log('Play error:', error);
+      setIsPlaying(false);
+      setAudioError('Не удалось воспроизвести трек. Попробуйте другой.');
     }
-    return () => clearInterval(interval);
-  }, [isPlaying, currentTrack, isRepeating, currentTrackDuration, nextTrack]);
+  };
+
+  const handleSeek = (value: number[]) => {
+    const newTime = (value[0] / 100) * currentTrackDuration;
+    setCurrentTime(newTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+  };
+
+  // Реальный прогресс трека берется из audioRef.current.currentTime
+  // Симуляция больше не нужна, так как у нас есть реальное аудио
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -212,19 +336,8 @@ export function MusicPlayer() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
-
-  const prevTrack = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
-    setCurrentTime(0);
-  };
-
-  const selectTrack = (index: number) => {
-    setCurrentTrackIndex(index);
-    setCurrentTime(0);
-    setIsPlaying(true);
+  const toggleLikeTrack = (trackId: number) => {
+    toggleLike(trackId);
   };
 
   if (loading) {
@@ -282,7 +395,7 @@ export function MusicPlayer() {
                         className="relative"
                       >
                         <ImageWithFallback
-                          src={currentTrack.coverUrl || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop'}
+                          src={currentTrack.cover || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop'}
                           alt={currentTrack.title}
                           className="w-full aspect-square object-cover rounded-2xl"
                         />
@@ -321,7 +434,7 @@ export function MusicPlayer() {
                               key={i}
                               className="w-1 bg-gradient-to-t from-[#00ffff] to-[#ff00ff] animate-pulse-neon"
                               style={{
-                                height: `${8 + Math.random() * 16}px`,
+                                height: `${8 + (i % 4) * 4}px`, // Детерминированная высота
                                 animationDelay: `${i * 0.1}s`,
                                 animationDuration: '0.8s',
                               }}
@@ -341,7 +454,7 @@ export function MusicPlayer() {
                           {currentTrack.title}
                         </h1>
                         <p className="text-xl text-gray-300 mb-1">{currentTrack.artist}</p>
-                        <p className="text-gray-400">{currentTrack.genre || 'Electronic'} • {currentTrack.releaseDate || '2024'}</p>
+                        <p className="text-gray-400">{currentTrack.genre || 'Electronic'} • {currentTrack.year || '2024'}</p>
                       </div>
 
                       {/* Прогресс бар */}
@@ -403,7 +516,7 @@ export function MusicPlayer() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleLike(currentTrack.id)}
+                            onClick={() => toggleLikeTrack(currentTrack.id)}
                             className={`${currentTrack.isLiked ? 'text-red-400' : 'text-gray-400'} hover:text-red-400`}
                           >
                             <div className={currentTrack.isLiked ? 'fill-current' : ''}>
@@ -476,7 +589,7 @@ export function MusicPlayer() {
                         <div className="flex items-center gap-3">
                           <div className="relative w-12 h-12 flex-shrink-0">
                             <ImageWithFallback
-                              src={track.coverUrl || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop'}
+                              src={track.cover || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop'}
                               alt={track.title}
                               className="w-full h-full object-cover rounded-lg"
                             />

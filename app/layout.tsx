@@ -59,6 +59,15 @@ export const metadata: Metadata = {
     creator: '@nexusmusic',
     images: ['/og-image.jpg'],
   },
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon.ico', sizes: '32x32' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png'
+  },
   robots: {
     index: true,
     follow: true,

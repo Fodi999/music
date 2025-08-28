@@ -111,7 +111,7 @@ const releases: Release[] = [
     title: "Midnight Drive",
     type: "Single",
     year: "2023",
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     duration: "5:30",
     author: "NEXUS"
   },
@@ -225,7 +225,7 @@ export function MusicSection() {
                             key={i}
                             className="w-1 bg-[#00ffff] animate-pulse-neon"
                             style={{
-                              height: `${12 + Math.random() * 8}px`,
+                              height: `${12 + i * 2}px`, // Детерминированная высота
                               animationDelay: `${i * 0.1}s`,
                             }}
                           />

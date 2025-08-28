@@ -4,35 +4,71 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary: 220.9 39.3% 11%;
+    --primary-foreground: 210 20% 98%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 71.4% 4.1%;
 
     --radius: 0.5rem;
+
+    --chart-1: 12 76% 61%;
+
+    --chart-2: 173 58% 39%;
+
+    --chart-3: 197 37% 24%;
+
+    --chart-4: 43 74% 66%;
+
+    --chart-5: 27 87% 67%;
+  }
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 210 20% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 216 12.2% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -177,4 +213,201 @@
     0 0 5px #9d4edd,
     0 0 10px #9d4edd,
     0 0 20px #9d4edd;
+}
+
+/* Electronic music specific styles */
+.electronic-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: grid-move 20s linear infinite;
+}
+
+@keyframes grid-move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+
+.holographic {
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(0, 255, 255, 0.1) 50%, 
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: holographic-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes holographic-shimmer {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+.synthwave-gradient {
+  background: linear-gradient(135deg, 
+    #0a0a0a 0%, 
+    #1a0f2e 25%, 
+    #2d1b69 50%, 
+    #1a0f2e 75%, 
+    #0a0a0a 100%
+  );
+  background-size: 400% 400%;
+  animation: synthwave-bg 8s ease-in-out infinite;
+}
+
+@keyframes synthwave-bg {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.electronic-border {
+  position: relative;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.electronic-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  margin: -1px;
+  border-radius: inherit;
+  background: linear-gradient(45deg, #00ffff, #0080ff, #8000ff, #ff00ff);
+  background-size: 300% 300%;
+  animation: electronic-border-flow 4s ease-in-out infinite;
+}
+
+@keyframes electronic-border-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.spectrum-analyzer {
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  height: 40px;
+}
+
+.spectrum-bar {
+  width: 3px;
+  background: linear-gradient(to top, #00ffff, #0080ff, #8000ff);
+  border-radius: 1px;
+  animation: spectrum-bounce 1.5s ease-in-out infinite;
+}
+
+.spectrum-bar:nth-child(1) { animation-delay: 0s; }
+.spectrum-bar:nth-child(2) { animation-delay: 0.1s; }
+.spectrum-bar:nth-child(3) { animation-delay: 0.2s; }
+.spectrum-bar:nth-child(4) { animation-delay: 0.3s; }
+.spectrum-bar:nth-child(5) { animation-delay: 0.4s; }
+.spectrum-bar:nth-child(6) { animation-delay: 0.5s; }
+.spectrum-bar:nth-child(7) { animation-delay: 0.4s; }
+.spectrum-bar:nth-child(8) { animation-delay: 0.3s; }
+.spectrum-bar:nth-child(9) { animation-delay: 0.2s; }
+.spectrum-bar:nth-child(10) { animation-delay: 0.1s; }
+
+@keyframes spectrum-bounce {
+  0%, 100% {
+    height: 4px;
+  }
+  50% {
+    height: 32px;
+  }
+}
+
+.digital-rain {
+  position: relative;
+  overflow: hidden;
+}
+
+.digital-rain::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 200%;
+  background-image: 
+    radial-gradient(circle, rgba(0, 255, 255, 0.3) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: digital-rain-fall 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes digital-rain-fall {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.beat-pulse {
+  animation: beat-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes beat-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 20px;
+}
+
+.waveform-bar {
+  width: 2px;
+  background: linear-gradient(to top, #00ffff 0%, #0080ff 50%, #8000ff 100%);
+  border-radius: 1px;
+  animation: waveform-dance 2s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(odd) {
+  animation-delay: 0s;
+}
+
+.waveform-bar:nth-child(even) {
+  animation-delay: 0.1s;
+}
+
+@keyframes waveform-dance {
+  0%, 100% {
+    height: 4px;
+  }
+  25% {
+    height: 12px;
+  }
+  75% {
+    height: 8px;
+  }
 }

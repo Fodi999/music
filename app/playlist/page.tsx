@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Play, Pause, Heart, Clock, SkipBack, SkipForward, Shuffle, Repeat } from 'lucide-react'
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback'
+import { SimpleAudioPlayer } from '@/components/SimpleAudioPlayer'
 import Link from 'next/link'
 
 interface PlaylistTrack {
@@ -30,7 +31,7 @@ const playlistTracks: PlaylistTrack[] = [
     duration: "4:32",
     genre: "Synthwave",
     year: "2024",
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     isLiked: true
   },
   {
@@ -72,7 +73,7 @@ const playlistTracks: PlaylistTrack[] = [
     duration: "6:12",
     genre: "Synthwave",
     year: "2022",
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     isLiked: true
   },
   {
@@ -104,7 +105,7 @@ const playlistTracks: PlaylistTrack[] = [
     duration: "5:30",
     genre: "Synthwave",
     year: "2023",
-    cover: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300",
+    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300",
     isLiked: true
   },
   {
@@ -185,7 +186,7 @@ export default function PlaylistPage() {
             <div className="relative">
               <div className="w-64 h-64 rounded-2xl overflow-hidden shadow-2xl neon-glow">
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVjdHJvbmljJTIwbXVzaWMlMjBhbGJ1bSUyMGNvdmVyfGVufDF8fHx8MTc1NjIyNDM3MHww&ixlib=rb-4.1.0&q=80&w=300"
+                  src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=300"
                   alt="NEXUS Complete Playlist"
                   className="w-full h-full object-cover"
                 />
@@ -288,7 +289,7 @@ export default function PlaylistPage() {
                         key={i}
                         className="w-1 bg-[#00ffff] animate-pulse-neon"
                         style={{
-                          height: `${8 + Math.random() * 8}px`,
+                          height: `${8 + i * 3}px`, // Детерминированная высота
                           animationDelay: `${i * 0.1}s`,
                         }}
                       />
@@ -369,6 +370,19 @@ export default function PlaylistPage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Демо аудио плеер */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+          className="mt-16"
+        >
+          <h3 className="text-2xl font-bold text-center mb-8 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffff] to-[#ff00ff]">
+            🎵 Тест Аудио Плеера
+          </h3>
+          <SimpleAudioPlayer />
+        </motion.div>
       </div>
     </div>
   )

@@ -2,20 +2,27 @@ import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { Play, Music, Search, User, Calendar, MessageCircle } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const Particle = ({ delay, ...props }: { delay: number } & React.ComponentProps<'div'>) => (
-  <div
-    {...props}
-    className="particle w-2 h-2"
-    style={{
+const Particle = ({ delay, index }: { delay: number; index: number }) => {
+  const [style, setStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    // Генерируем стили только на клиенте для избежания hydration mismatch
+    setStyle({
       left: `${Math.random() * 100}%`,
       animationDelay: `${delay}s`,
       animationDuration: `${8 + Math.random() * 4}s`,
-    }}
-  />
-);
+    });
+  }, [delay]);
+
+  return (
+    <div
+      className="particle w-2 h-2"
+      style={style}
+    />
+  );
+};
 
 interface HeroSectionProps {
   onNavigateToMusic: () => void;
@@ -36,48 +43,81 @@ export function HeroSection({ onNavigateToMusic }: HeroSectionProps) {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-[#00ffff] rounded-full animate-pulse-neon" />
+              <div className="w-2 h-2 bg-[#00ffff] rounded-full animate-pulse" />
               <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00ffff] to-[#ff00ff]">
                 NEXUS
               </span>
-              <div className="w-2 h-2 bg-[#ff00ff] rounded-full animate-pulse-neon" />
+              <div className="w-2 h-2 bg-[#ff00ff] rounded-full animate-pulse" />
             </div>
             
             <div className="hidden md:flex items-center gap-6">
-              <Link href="/music">
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition-colors">
-                  <div className="w-4 h-4 mr-2">
-                    <Music size={16} />
-                  </div>
-                  Music
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-400 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition-colors"
+                onClick={onNavigateToMusic}
+              >
+                <div className="w-4 h-4 mr-2">
+                  <Music size={16} />
+                </div>
+                Music
+              </Button>
               
-              <Link href="/playlist">
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#ff00ff] hover:bg-[#ff00ff]/10 transition-colors">
-                  <div className="w-4 h-4 mr-2">
-                    <Play size={16} />
-                  </div>
-                  Playlist
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-400 hover:text-[#8000ff] hover:bg-[#8000ff]/10 transition-colors"
+                onClick={onNavigateToMusic}
+              >
+                <div className="w-4 h-4 mr-2">
+                  <Music size={16} />
+                </div>
+                Electronic
+              </Button>
               
-              <Link href="/search">
-                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-[#9d4edd] hover:bg-[#9d4edd]/10 transition-colors">
-                  <div className="w-4 h-4 mr-2">
-                    <Search size={16} />
-                  </div>
-                  Search
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-400 hover:text-[#ff00ff] hover:bg-[#ff00ff]/10 transition-colors"
+                onClick={onNavigateToMusic}
+              >
+                <div className="w-4 h-4 mr-2">
+                  <Play size={16} />
+                </div>
+                Playlist
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-400 hover:text-[#9d4edd] hover:bg-[#9d4edd]/10 transition-colors"
+              >
+                <div className="w-4 h-4 mr-2">
+                  <Search size={16} />
+                </div>
+                Search
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-400 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition-colors"
+                onClick={onNavigateToMusic}
+              >
+                <div className="w-4 h-4 mr-2">
+                  <Play size={16} />
+                </div>
+                Audio Test
+              </Button>
             </div>
           </div>
         </div>
       </nav>
+
       {/* Анимированные частицы */}
       <div className="absolute inset-0 opacity-30">
         {Array.from({ length: 20 }).map((_, i) => (
-          <Particle key={i} delay={i * 0.5} />
+          <Particle key={i} delay={i * 0.5} index={i} />
         ))}
       </div>
 
@@ -99,7 +139,7 @@ export function HeroSection({ onNavigateToMusic }: HeroSectionProps) {
           transition={{ duration: 1, delay: 0.2 }}
           className="mb-6"
         >
-          <h1 className="text-6xl md:text-8xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffff] via-[#ff00ff] to-[#9d4edd] neon-glow animate-pulse-neon">
+          <h1 className="text-6xl md:text-8xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffff] via-[#ff00ff] to-[#9d4edd] neon-glow">
             NEXUS
           </h1>
         </motion.div>
@@ -129,7 +169,7 @@ export function HeroSection({ onNavigateToMusic }: HeroSectionProps) {
         >
           <Button
             onClick={onNavigateToMusic}
-            className="bg-gradient-to-r from-[#00ffff] to-[#ff00ff] text-black px-8 py-6 text-lg neon-border hover:shadow-[0_0_20px_#00ffff] transition-all duration-300 group"
+            className="bg-gradient-to-r from-[#00ffff] to-[#ff00ff] text-black px-8 py-6 text-lg hover:shadow-[0_0_20px_#00ffff] transition-all duration-300 group border border-[#00ffff]/30"
           >
             <div className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform">
               <Play size={20} />
@@ -138,9 +178,19 @@ export function HeroSection({ onNavigateToMusic }: HeroSectionProps) {
           </Button>
           
           <Button
+            onClick={onNavigateToMusic}
+            className="bg-gradient-to-r from-[#8000ff] to-[#0080ff] text-white px-8 py-6 text-lg hover:shadow-[0_0_20px_#8000ff] transition-all duration-300 group border border-[#8000ff]/30"
+          >
+            <div className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform">
+              <Music size={20} />
+            </div>
+            Electronic Music
+          </Button>
+          
+          <Button
             onClick={scrollToContact}
             variant="outline"
-            className="border-[#9d4edd] text-[#9d4edd] px-8 py-6 text-lg neon-border hover:bg-[#9d4edd]/10 hover:shadow-[0_0_20px_#9d4edd] transition-all duration-300"
+            className="border-[#9d4edd] text-[#9d4edd] px-8 py-6 text-lg hover:bg-[#9d4edd]/10 hover:shadow-[0_0_20px_#9d4edd] transition-all duration-300"
           >
             Связаться
           </Button>
@@ -154,13 +204,25 @@ export function HeroSection({ onNavigateToMusic }: HeroSectionProps) {
           className="mt-12 flex justify-center gap-1"
         >
           {Array.from({ length: 32 }).map((_, i) => (
-            <div
+            <motion.div
               key={i}
-              className="w-1 bg-gradient-to-t from-[#00ffff] to-[#ff00ff] animate-pulse-neon"
+              className="w-1 bg-gradient-to-t from-[#00ffff] to-[#ff00ff] rounded-full"
               style={{
-                height: `${20 + Math.random() * 40}px`,
-                animationDelay: `${i * 0.1}s`,
-                animationDuration: '1.5s',
+                height: `${20 + (i % 5) * 8}px`,
+              }}
+              animate={{
+                height: [
+                  `${20 + (i % 5) * 8}px`, 
+                  `${30 + (i % 7) * 12}px`, 
+                  `${20 + (i % 5) * 8}px`
+                ],
+                opacity: [0.6, 1, 0.6]
+              }}
+              transition={{
+                duration: 1.5 + (i % 3) * 0.5,
+                repeat: Infinity,
+                delay: i * 0.1,
+                ease: "easeInOut"
               }}
             />
           ))}
@@ -172,7 +234,8 @@ export function HeroSection({ onNavigateToMusic }: HeroSectionProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 2 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-[#00ffff] animate-bounce"
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-[#00ffff] animate-bounce cursor-pointer"
+        onClick={onNavigateToMusic}
       >
         <div className="flex flex-col items-center gap-2">
           <span className="text-sm uppercase tracking-wide">Прокрутить</span>

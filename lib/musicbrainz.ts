@@ -1,29 +1,18 @@
-// MusicBrainz API utilities
-const MUSICBRAINZ_BASE_URL = 'https://musicbrainz.org/ws/2';
-const USER_AGENT = 'NEXUS-Music-Website/1.0.0 (contact@nexusmusic.com)';
+// MusicBrainz API utilities - using internal API routes
+import { getCoverByIndex } from './covers';
 
-// Rate limiting: MusicBrainz allows 1 request per second
-let lastRequestTime = 0;
-const RATE_LIMIT_DELAY = 1000;
+const API_BASE_URL = '/api/music';
 
-async function rateLimitedFetch(url: string, options: RequestInit = {}) {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
+// Rate limiting is handled by our API routes
+async function apiRequest(url: string) {
+  const response = await fetch(url);
   
-  if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
-    await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY - timeSinceLastRequest));
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`API error: ${response.status} ${response.statusText} - ${errorData.error || 'Unknown error'}`);
   }
   
-  lastRequestTime = Date.now();
-  
-  return fetch(url, {
-    ...options,
-    headers: {
-      'User-Agent': USER_AGENT,
-      'Accept': 'application/json',
-      ...options.headers,
-    },
-  });
+  return response.json();
 }
 
 export interface MusicBrainzArtist {
@@ -33,6 +22,7 @@ export interface MusicBrainzArtist {
   disambiguation?: string;
   'type-id'?: string;
   type?: string;
+  score?: number; // Search score from MusicBrainz
   'life-span'?: {
     begin?: string;
     end?: string;
@@ -102,22 +92,19 @@ export interface MusicBrainzRelease {
       name: string;
     };
   }>;
-  'release-group'?: {
-    id: string;
-    'primary-type': string;
-    'secondary-types'?: string[];
-  };
   media?: Array<{
     title?: string;
     'track-count': number;
-    tracks?: Array<{
-      id: string;
-      title: string;
-      length?: number;
-      position: number;
-      recording: MusicBrainzRecording;
-    }>;
+    format?: string;
   }>;
+  'label-info'?: Array<{
+    label: {
+      id: string;
+      name: string;
+    };
+  }>;
+  country?: string;
+  disambiguation?: string;
 }
 
 export interface MusicBrainzSearchResponse<T> {
@@ -145,254 +132,11 @@ export interface MusicBrainzRecordingSearchResult {
   offset: number;
 }
 
-// Search for artists
-export async function searchArtists(query: string, limit: number = 10): Promise<MusicBrainzArtist[]> {
-  try {
-    const params = new URLSearchParams({
-      query: query,
-      fmt: 'json',
-      limit: limit.toString(),
-    });
-    
-    const response = await rateLimitedFetch(`${MUSICBRAINZ_BASE_URL}/artist?${params}`);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.artists || [];
-  } catch (error) {
-    console.error('Error searching artists:', error);
-    return [];
-  }
-}
-
-// Get artist details with releases
-export async function getArtistDetails(artistId: string): Promise<MusicBrainzArtist | null> {
-  try {
-    const params = new URLSearchParams({
-      fmt: 'json',
-      inc: 'releases+release-groups+genres+tags+area',
-    });
-    
-    const response = await rateLimitedFetch(`${MUSICBRAINZ_BASE_URL}/artist/${artistId}?${params}`);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error getting artist details:', error);
-    return null;
-  }
-}
-
-// Search for recordings (songs)
-export async function searchRecordings(query: string, limit: number = 10): Promise<MusicBrainzRecording[]> {
-  try {
-    const params = new URLSearchParams({
-      query: query,
-      fmt: 'json',
-      limit: limit.toString(),
-    });
-    
-    const response = await rateLimitedFetch(`${MUSICBRAINZ_BASE_URL}/recording?${params}`);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.recordings || [];
-  } catch (error) {
-    console.error('Error searching recordings:', error);
-    return [];
-  }
-}
-
-// Get release details with tracks
-export async function getReleaseDetails(releaseId: string): Promise<MusicBrainzRelease | null> {
-  try {
-    const params = new URLSearchParams({
-      fmt: 'json',
-      inc: 'recordings+artist-credits+release-groups',
-    });
-    
-    const response = await rateLimitedFetch(`${MUSICBRAINZ_BASE_URL}/release/${releaseId}?${params}`);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error getting release details:', error);
-    return null;
-  }
-}
-
-// Get cover art from Cover Art Archive
-export async function getCoverArt(releaseId: string): Promise<string | null> {
-  try {
-    const response = await fetch(`https://coverartarchive.org/release/${releaseId}`);
-    
-    if (!response.ok) {
-      return null;
-    }
-    
-    const data = await response.json();
-    const frontCover = data.images?.find((img: any) => img.front);
-    
-    return frontCover?.image || data.images?.[0]?.image || null;
-  } catch (error) {
-    console.error('Error getting cover art:', error);
-    return null;
-  }
-}
-
-// Search for electronic music artists and their releases
-export async function searchElectronicMusic(genres: string[] = ['electronic', 'techno', 'house', 'ambient']): Promise<{
-  artists: MusicBrainzArtist[];
-  recordings: MusicBrainzRecording[];
-}> {
-  const results = {
-    artists: [] as MusicBrainzArtist[],
-    recordings: [] as MusicBrainzRecording[],
-  };
-  
-  for (const genre of genres.slice(0, 2)) { // Limit to avoid rate limiting
-    const artists = await searchArtists(`genre:${genre}`, 5);
-    const recordings = await searchRecordings(`tag:${genre}`, 5);
-    
-    results.artists.push(...artists);
-    results.recordings.push(...recordings);
-  }
-  
-  return results;
-}
-
-// Format duration from milliseconds to MM:SS
-export function formatDuration(milliseconds?: number): string {
-  if (!milliseconds) return '0:00';
-  
-  const seconds = Math.floor(milliseconds / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-// Generate fallback playlist data
-export function generateFallbackPlaylist() {
-  return [
-    {
-      id: '1',
-      title: 'Neon Dreams',
-      artist: 'NEXUS',
-      duration: '4:32',
-      coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
-      releaseDate: '2024',
-      genre: 'Future Bass'
-    },
-    {
-      id: '2',
-      title: 'Cyberpunk Nights',
-      artist: 'NEXUS',
-      duration: '5:18',
-      coverUrl: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&h=300&fit=crop',
-      releaseDate: '2024',
-      genre: 'Synthwave'
-    },
-    {
-      id: '3',
-      title: 'Digital Horizon',
-      artist: 'NEXUS ft. Echo Matrix',
-      duration: '4:45',
-      coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&h=300&fit=crop',
-      releaseDate: '2023',
-      genre: 'Ambient'
-    },
-    {
-      id: '4',
-      title: 'Quantum Bass',
-      artist: 'NEXUS',
-      duration: '6:12',
-      coverUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop',
-      releaseDate: '2023',
-      genre: 'Dubstep'
-    },
-    {
-      id: '5',
-      title: 'Synthetic Emotions',
-      artist: 'NEXUS & Luna Waves',
-      duration: '4:03',
-      coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
-      releaseDate: '2024',
-      genre: 'Melodic Dubstep'
-    },
-    {
-      id: '6',
-      title: 'Orbital Drift',
-      artist: 'NEXUS',
-      duration: '7:21',
-      coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&h=300&fit=crop',
-      releaseDate: '2022',
-      genre: 'Ambient Techno'
-    },
-    {
-      id: '7',
-      title: 'Voltage Rush',
-      artist: 'NEXUS ft. Digital Storm',
-      duration: '3:54',
-      coverUrl: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&h=300&fit=crop',
-      releaseDate: '2023',
-      genre: 'Electro House'
-    },
-    {
-      id: '8',
-      title: 'Binary Stars',
-      artist: 'NEXUS',
-      duration: '5:37',
-      coverUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=300&fit=crop',
-      releaseDate: '2022',
-      genre: 'Progressive House'
-    },
-    {
-      id: '9',
-      title: 'Neural Network',
-      artist: 'NEXUS & Future Dynamics',
-      duration: '4:28',
-      coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop',
-      releaseDate: '2024',
-      genre: 'Neurofunk'
-    },
-    {
-      id: '10',
-      title: 'Infinity Loop',
-      artist: 'NEXUS',
-      duration: '6:45',
-      coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300&h=300&fit=crop',
-      releaseDate: '2022',
-      genre: 'Psytrance'
-    }
-  ];
-}
-
 // Search functions
 export async function searchArtist(query: string, limit: number = 25, offset: number = 0): Promise<MusicBrainzArtistSearchResult> {
   try {
-    const encodedQuery = encodeURIComponent(query);
-    const url = `${MUSICBRAINZ_BASE_URL}/artist?query=${encodedQuery}&limit=${limit}&offset=${offset}&fmt=json`;
-    
-    const response = await rateLimitedFetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
+    const url = `${API_BASE_URL}?q=${encodeURIComponent(query)}&type=artist&limit=${limit}&offset=${offset}`;
+    const data = await apiRequest(url);
     return data as MusicBrainzArtistSearchResult;
   } catch (error) {
     console.error('Error searching artists:', error);
@@ -402,15 +146,8 @@ export async function searchArtist(query: string, limit: number = 25, offset: nu
 
 export async function searchReleasesByArtist(artistId: string, limit: number = 25, offset: number = 0): Promise<MusicBrainzReleaseSearchResult> {
   try {
-    const url = `${MUSICBRAINZ_BASE_URL}/release?artist=${artistId}&limit=${limit}&offset=${offset}&fmt=json`;
-    
-    const response = await rateLimitedFetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
+    const url = `${API_BASE_URL}/artist/${artistId}/releases?limit=${limit}&offset=${offset}`;
+    const data = await apiRequest(url);
     return data as MusicBrainzReleaseSearchResult;
   } catch (error) {
     console.error('Error searching releases by artist:', error);
@@ -420,16 +157,8 @@ export async function searchReleasesByArtist(artistId: string, limit: number = 2
 
 export async function searchRecording(query: string, limit: number = 25, offset: number = 0): Promise<MusicBrainzRecordingSearchResult> {
   try {
-    const encodedQuery = encodeURIComponent(query);
-    const url = `${MUSICBRAINZ_BASE_URL}/recording?query=${encodedQuery}&limit=${limit}&offset=${offset}&fmt=json`;
-    
-    const response = await rateLimitedFetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
+    const url = `${API_BASE_URL}?q=${encodeURIComponent(query)}&type=recording&limit=${limit}&offset=${offset}`;
+    const data = await apiRequest(url);
     return data as MusicBrainzRecordingSearchResult;
   } catch (error) {
     console.error('Error searching recordings:', error);
@@ -439,20 +168,14 @@ export async function searchRecording(query: string, limit: number = 25, offset:
 
 export async function getArtistReleases(artistId: string, releaseType?: string[], limit: number = 50): Promise<MusicBrainzReleaseSearchResult> {
   try {
-    let url = `${MUSICBRAINZ_BASE_URL}/release?artist=${artistId}&limit=${limit}&fmt=json`;
+    let url = `${API_BASE_URL}/artist/${artistId}/releases?limit=${limit}`;
     
     if (releaseType && releaseType.length > 0) {
       const types = releaseType.join('+OR+');
       url += `&type=${types}`;
     }
     
-    const response = await rateLimitedFetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
+    const data = await apiRequest(url);
     return data as MusicBrainzReleaseSearchResult;
   } catch (error) {
     console.error('Error getting artist releases:', error);
@@ -480,23 +203,105 @@ export async function advancedArtistSearch(options: {
     if (options.tag) queryParts.push(`tag:${options.tag}`);
     
     const query = queryParts.join(' AND ');
-    const encodedQuery = encodeURIComponent(query);
-    
     const limit = options.limit || 25;
     const offset = options.offset || 0;
     
-    const url = `${MUSICBRAINZ_BASE_URL}/artist?query=${encodedQuery}&limit=${limit}&offset=${offset}&fmt=json`;
-    
-    const response = await rateLimitedFetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
+    const url = `${API_BASE_URL}?q=${encodeURIComponent(query)}&type=artist&limit=${limit}&offset=${offset}`;
+    const data = await apiRequest(url);
     return data as MusicBrainzArtistSearchResult;
   } catch (error) {
     console.error('Error in advanced artist search:', error);
+    throw error;
+  }
+}
+
+// Generate playlist from MusicBrainz API
+export async function generatePlaylistFromMusicBrainz(genres: string[], limit: number = 10) {
+  try {
+    const tracks = [];
+    
+    for (const genre of genres.slice(0, 3)) { // Limit to 3 genres to avoid too many requests
+      try {
+        const result = await searchRecording(genre, Math.ceil(limit / genres.length));
+        if (result.recordings && result.recordings.length > 0) {
+          tracks.push(...result.recordings.slice(0, Math.ceil(limit / genres.length)));
+        }
+      } catch (error) {
+        console.warn(`Failed to search for genre ${genre}:`, error);
+      }
+    }
+    
+    return tracks.slice(0, limit).map((recording, index) => ({
+      id: index + 1,
+      title: recording.title,
+      artist: recording['artist-credit']?.[0]?.name || recording['artist-credit']?.[0]?.artist?.name || 'Unknown Artist',
+      album: recording.releases?.[0]?.title || 'Unknown Album',
+      duration: recording.length ? formatDuration(recording.length) : '3:30',
+      durationSeconds: recording.length ? Math.floor(recording.length / 1000) : 210,
+      cover: getCoverByIndex(index),
+      genre: genres[index % genres.length],
+      year: recording.releases?.[0]?.date?.substring(0, 4) || '2024',
+      mbid: recording.id,
+      isLiked: index % 3 === 0 // Детерминированные лайки для демо
+    }));
+  } catch (error) {
+    console.error('Error generating playlist from MusicBrainz:', error);
+    return [];
+  }
+}
+
+function formatDuration(milliseconds: number): string {
+  const seconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// Cover Art Archive helper
+export function getCoverArtUrl(mbid: string, size: 'small' | 'large' = 'small'): string {
+  const sizeParam = size === 'large' ? '500' : '250';
+  return `https://coverartarchive.org/release/${mbid}/front-${sizeParam}`;
+}
+
+// Example usage and demo functions
+export const DEMO_QUERIES = {
+  artists: ['Queen', 'The Beatles', 'Pink Floyd', 'Led Zeppelin'],
+  recordings: ['Bohemian Rhapsody', 'Yesterday', 'Stairway to Heaven', 'Hotel California'],
+  genres: ['electronic', 'rock', 'jazz', 'classical', 'hip hop']
+};
+
+export async function searchDemo() {
+  try {
+    console.log('🎵 Starting MusicBrainz Demo...');
+    
+    // Search for Queen
+    const queenResults = await searchArtist('Queen');
+    const queen = queenResults.artists.find(artist => 
+      artist.name === 'Queen' && artist.type === 'Group'
+    );
+    
+    if (queen) {
+      console.log('👑 Found Queen:', queen.name, queen.id);
+      
+      // Get Queen's albums
+      const albums = await searchReleasesByArtist(queen.id, 10);
+      console.log(`📀 Found ${albums.releases.length} Queen albums`);
+      
+      // Search for Bohemian Rhapsody
+      const bohemianResults = await searchRecording('Bohemian Rhapsody');
+      console.log(`🎵 Found ${bohemianResults.recordings.length} versions of Bohemian Rhapsody`);
+      
+      return {
+        artist: queen,
+        albums: albums.releases,
+        bohemianRhapsody: bohemianResults.recordings
+      };
+    } else {
+      console.log('❌ Queen not found');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Demo failed:', error);
     throw error;
   }
 }
